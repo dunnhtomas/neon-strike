@@ -233,7 +233,7 @@ class TitleScene extends Phaser.Scene {
       stroke: '#00E5FF', strokeThickness: 8,
       shadow: { offsetX: 0, offsetY: 0, blur: 24, color: '#00E5FF', fill: true, stroke: true },
     }).setOrigin(0.5);
-    this.tweens.add({ targets: title, alpha: 0.85, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: title, alpha: 0.85, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     const tag = this.add.text(cx, cy - 130, 'ONE THUMB. ONE BREATH. ONE MORE TRY.', {
       fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99', letterSpacing: 3,
@@ -254,7 +254,7 @@ class TitleScene extends Phaser.Scene {
     const btnY = cy + 120;
     const btnBg = this.add.image(cx, btnY, 'btnPrimary').setInteractive();
     const btnTxt = this.add.text(cx, btnY + 1, 'TAP TO PLAY', { fontFamily: FONT.display, fontSize: '32px', color: '#0A0E1A' }).setOrigin(0.5);
-    this.tweens.add({ targets: btnBg, scaleX: 1.04, scaleY: 1.04, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: btnBg, scaleX: 1.04, scaleY: 1.04, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     btnBg.on('pointerdown', () => { Audio.ui(); if (navigator.vibrate && state.haptic) navigator.vibrate(10); this.scene.start('game'); });
 
     // secondary: daily challenge
@@ -291,7 +291,7 @@ class TitleScene extends Phaser.Scene {
   }
   showHandHint(x, y) {
     const hand = this.add.image(x, y, 'handIcon').setAlpha(0.9).setScale(1.2);
-    this.tweens.add({ targets: hand, x: x - 50, y: y - 20, duration: 900, yoyo: true, repeat: 2, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: hand, x: x - 50, y: y - 20, duration: 900, yoyo: true, repeat: 2, ease: 'Sine.easeInOut' });
     const t = this.add.text(x + 40, y, 'Drag back, then release', { fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99' }).setOrigin(0, 0.5);
     this.time.delayedCall(2800, () => { hand.destroy(); t.destroy(); });
   }
@@ -609,7 +609,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.shake(70, 0.005);
     this.cameras.main.zoomTo(1.05, 90, 'Sine.out', false, (c) => c.zoomTo(1, 280));
     this.ball.setScale(1.18, 0.82);    // squash
-    this.tweens.add({ targets: this.ball, scaleX: 1, scaleY: 1, duration: 140, ease: 'Back.out' });
+    this.tweens.add({ targets: this.ball, scaleX: 1, scaleY: 1, duration: 140, ease: 'Back.easeOut' });
     if (navigator.vibrate && this.state.haptic) navigator.vibrate(14);
     this.hintTxt.setAlpha(0);
     localStorage.setItem(HAS_TUTORIAL, '1');
@@ -808,7 +808,7 @@ class GameScene extends Phaser.Scene {
         fontFamily: 'Arial Black, system-ui', fontSize: '34px', color: perfect ? '#39FF14' : '#00E5FF',
         stroke: '#0A0E1A', strokeThickness: 5,
       }).setOrigin(0.5).setScale(0.2);
-      this.tweens.add({ targets: pop, scale: 1.15, duration: 260, ease: 'Back.out', yoyo: true, hold: 300,
+      this.tweens.add({ targets: pop, scale: 1.15, duration: 260, ease: 'Back.easeOut', yoyo: true, hold: 300,
         onComplete: () => pop.destroy() });
       if (perfect) {
         const pf = this.add.text(GW / 2, 260, 'PERFECT', { fontFamily: 'Arial Black, system-ui', fontSize: '48px', color: '#39FF14', stroke: '#0A0E1A', strokeThickness: 6 }).setOrigin(0.5).setAlpha(0);
@@ -890,7 +890,7 @@ class GameScene extends Phaser.Scene {
   keeperDive(targetX) {
     this.keeperDiving = true;
     const dir = Math.sign(targetX - this.keeper.x) || 1;
-    this.tweens.add({ targets: this.keeper, x: this.keeper.x + dir * 90, y: GOAL.bottom - 50, duration: 220, ease: 'Cubic.out',
+    this.tweens.add({ targets: this.keeper, x: this.keeper.x + dir * 90, y: GOAL.bottom - 50, duration: 220, ease: 'Cubic.easeOut',
       onComplete: () => { this.time.delayedCall(500, () => { this.keeper.x = GW / 2; this.keeper.y = GOAL.bottom - 28; this.keeperDiving = false; }); } });
     this.keeper.setRotation(dir * 0.6);
     this.time.delayedCall(600, () => this.keeper.setRotation(0));
@@ -936,8 +936,8 @@ class GameScene extends Phaser.Scene {
     const hand = this.add.image(GW / 2 + 40, GH - 170, 'handIcon').setScale(1.4).setAlpha(0.95); g.add(hand);
     const t1 = this.add.text(GW / 2, GH - 110, 'DRAG BACK FROM THE BALL', { fontFamily: FONT.display, fontSize: '28px', color: '#F5F7FF' }).setOrigin(0.5); g.add(t1);
     const t2 = this.add.text(GW / 2, GH - 78, 'Then swipe sideways on release to curve it', { fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99' }).setOrigin(0.5); g.add(t2);
-    this.tweens.add({ targets: hand, x: GW / 2 - 40, y: GH - 200, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    this.tweens.add({ targets: [t1, t2], alpha: 0.7, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: hand, x: GW / 2 - 40, y: GH - 200, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: [t1, t2], alpha: 0.7, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   openPause() {
