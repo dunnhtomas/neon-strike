@@ -1,0 +1,30 @@
+{
+  "name": "neon-strike",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Neon Strike — HD HTML5 mobile hypercasual soccer kicks & goals",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build && node scripts/postbuild.js",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "howler": "^2.2.4",
+    "phaser": "^3.90.0",
+    "pocketbase": "^0.27.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0",
+    "workbox-build": "^7.4.1"
+  }
+}

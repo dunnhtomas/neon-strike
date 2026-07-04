@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0A0E1A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Neon Strike — Soccer Kicks & Goals</title>
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230A0E1A'/%3E%3Ccircle cx='256' cy='256' r='140' fill='%2300E5FF'/%3E%3C/svg%3E" />
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #0A0E1A; overflow: hidden; }
+      body { touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      #game { width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; }
+      canvas { display: block; touch-action: none; }
+      .boot { color: #00E5FF; font-family: system-ui, sans-serif; font-weight: 700; letter-spacing: 2px; }
+    </style>
+  </head>
+  <body>
+    <div id="game"><div class="boot" id="bootMsg">NEON STRIKE…</div></div>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+    <script src="./src/config.js"></script>
+    <script src="./src/systems/achievements.js"></script>
+    <script src="./src/systems/daily.js"></script>
+    <script src="./src/systems/ads.js"></script>
+    <script src="./src/systems/iap.js"></script>
+    <script src="./src/client/pb.js"></script>
+    <script src="./game.js"></script>
+  </body>
+</html>

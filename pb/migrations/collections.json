@@ -1,0 +1,74 @@
+{
+  "collections": [
+    {
+      "id": "users",
+      "name": "users",
+      "type": "auth",
+      "system": true,
+      "schema": [
+        {"id": "avatar", "name": "avatar", "type": "file", "required": false},
+        {"id": "name", "name": "name", "type": "text", "required": false}
+      ],
+      "indexes": [],
+      "listRule": "id = @request.auth.id",
+      "viewRule": "id = @request.auth.id",
+      "createRule": "",
+      "updateRule": "id = @request.auth.id",
+      "deleteRule": "id = @request.auth.id",
+      "options": {"allowEmailAuth": true, "allowOAuth2Auth": true, "allowUsernameAuth": false, "exceptEmailDomains": null, "manageRule": null, "minPasswordLength": 6, "onlyEmailDomains": null, "requireEmail": false}
+    },
+    {
+      "id": "scores",
+      "name": "scores",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {"id": "user", "name": "user", "type": "relation", "required": true, "options": {"collectionId": "users", "cascadeDelete": true, "maxSelect": 1}},
+        {"id": "score", "name": "score", "type": "number", "required": true},
+        {"id": "level", "name": "level", "type": "number", "required": false},
+        {"id": "streak", "name": "streak", "type": "number", "required": false},
+        {"id": "dailySeed", "name": "dailySeed", "type": "number", "required": false},
+        {"id": "created", "name": "created", "type": "text", "required": false}
+      ],
+      "indexes": ["CREATE INDEX idx_score ON scores (score DESC)", "CREATE INDEX idx_daily ON scores (dailySeed)"],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "@request.auth.id != '' && user = @request.auth.id",
+      "updateRule": "user = @request.auth.id",
+      "deleteRule": "user = @request.auth.id"
+    },
+    {
+      "id": "game_state",
+      "name": "game_state",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {"id": "user", "name": "user", "type": "relation", "required": true, "options": {"collectionId": "users", "cascadeDelete": true, "maxSelect": 1}},
+        {"id": "state", "name": "state", "type": "json", "required": true}
+      ],
+      "indexes": [],
+      "listRule": "user = @request.auth.id",
+      "viewRule": "user = @request.auth.id",
+      "createRule": "@request.auth.id != '' && user = @request.auth.id",
+      "updateRule": "user = @request.auth.id",
+      "deleteRule": "user = @request.auth.id"
+    },
+    {
+      "id": "unlocks",
+      "name": "unlocks",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {"id": "user", "name": "user", "type": "relation", "required": true, "options": {"collectionId": "users", "cascadeDelete": true, "maxSelect": 1}},
+        {"id": "skinId", "name": "skinId", "type": "text", "required": true},
+        {"id": "source", "name": "source", "type": "select", "required": false, "options": {"values": ["score", "iap", "daily"]}}
+      ],
+      "indexes": [],
+      "listRule": "user = @request.auth.id",
+      "viewRule": "user = @request.auth.id",
+      "createRule": "@request.auth.id != '' && user = @request.auth.id",
+      "updateRule": "user = @request.auth.id",
+      "deleteRule": "user = @request.auth.id"
+    }
+  ]
+}

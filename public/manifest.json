@@ -1,0 +1,12 @@
+{
+  "name": "Neon Strike",
+  "short_name": "NeonStrike",
+  "description": "HD hypercasual soccer kicks & goals — bend it past the keeper.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0A0E1A",
+  "theme_color": "#0A0E1A",
+  "icons": []
+}
