@@ -33,7 +33,10 @@ npm run preview  # serve dist/
 
 The debug APK is produced automatically by `.github/workflows/build-apk.yml` in GitHub Actions.
 
-Local Android build (requires Android SDK + Java):
+Latest successful run: `https://github.com/dunnhtomas/neon-strike/actions/runs/28715512716`
+Artifact: `neon-strike-debug-apk` → `app-debug.apk` (~4 MB)
+
+Local Android build (requires Android SDK + Java 21):
 
 ```bash
 npm install
