@@ -17,6 +17,13 @@ const GW = 540, GH = 960;            // logical design resolution (9:16)
 const GRAVITY = 1400;                // px/s^2 (downward = +y)
 const BALL_START = { x: GW / 2, y: 820 };
 const GOAL = { left: 120, right: 420, top: 150, bottom: 220 };
+const FONT = { display: '"Teko", "Arial Narrow", sans-serif', body: '"Outfit", system-ui, sans-serif' };
+const UI = {
+  glass: { fill: 0x0A0E1A, alpha: 0.72, stroke: 0x00E5FF, strokeAlpha: 0.35 },
+  pad: 16,
+  radius: 18,
+};
+const HAS_TUTORIAL = 'neonStrike.tutorialSeen';
 const SKINS = [
   { id: 'default', name: 'Classic',    colors: [0xFFFFFF, 0x0A0E1A], trail: 0x00E5FF, unlock: 0,    rare: false },
   { id: 'fire',    name: 'Inferno',    colors: [0xFFD23F, 0xFF2D95], trail: 0xFF6B35, unlock: 500,  rare: false },
@@ -107,8 +114,8 @@ class BootScene extends Phaser.Scene {
   constructor() { super('boot'); }
   create() {
     this.makeBallTextures();
-    this.makeParticles();
-    this.scene.start('game');
+    this.makeUITextures();
+    this.scene.start('title');
   }
   makeBallTextures() {
     SKINS.forEach(skin => {
@@ -146,7 +153,173 @@ class BootScene extends Phaser.Scene {
     rg.lineStyle(4, C.green, 1); rg.strokeCircle(30, 30, 26);
     rg.generateTexture('ring', 60, 60); rg.destroy();
   }
+  makeUITextures() {
+    // glass panel (9-slice style, but we use as rounded rect bg via graphics)
+    const panel = this.add.graphics();
+    panel.fillStyle(UI.glass.fill, UI.glass.alpha);
+    panel.fillRoundedRect(0, 0, 320, 460, UI.radius);
+    panel.lineStyle(2, UI.glass.stroke, UI.glass.strokeAlpha);
+    panel.strokeRoundedRect(0, 0, 320, 460, UI.radius);
+    panel.generateTexture('glassPanel', 320, 460); panel.destroy();
+
+    // neon pill button
+    const btn = this.add.graphics();
+    btn.fillStyle(0x00E5FF, 1);
+    btn.fillRoundedRect(0, 0, 260, 64, 32);
+    btn.generateTexture('btnPrimary', 260, 64); btn.destroy();
+
+    // dark pill button
+    const btn2 = this.add.graphics();
+    btn2.fillStyle(0x10172A, 1);
+    btn2.lineStyle(2, 0x00E5FF, 0.6);
+    btn2.fillRoundedRect(0, 0, 260, 56, 28);
+    btn2.strokeRoundedRect(0, 0, 260, 56, 28);
+    btn2.generateTexture('btnSecondary', 260, 56); btn2.destroy();
+
+    // heart icon for lives
+    const h = this.add.graphics();
+    h.fillStyle(0x39FF14, 1);
+    h.beginPath();
+    h.moveTo(12, 22); h.bezierCurveTo(12, 18, 8, 12, 0, 12); h.bezierCurveTo(-12, 12, -16, 22, -12, 28);
+    h.lineTo(0, 42); h.lineTo(12, 28);
+    h.closePath(); h.fillPath();
+    h.generateTexture('heart', 28, 48); h.destroy();
+
+    // lightning icon
+    const l = this.add.graphics();
+    l.fillStyle(0xFF2D95, 1);
+    l.beginPath();
+    l.moveTo(6, 0); l.lineTo(20, 0); l.lineTo(10, 18); l.lineTo(22, 18); l.lineTo(0, 44); l.lineTo(8, 22); l.lineTo(-4, 22);
+    l.closePath(); l.fillPath();
+    l.generateTexture('lightning', 28, 48); l.destroy();
+
+    // pause icon
+    const pause = this.add.graphics();
+    pause.fillStyle(0xF5F7FF, 1); pause.fillRoundedRect(2, 2, 8, 24, 3); pause.fillRoundedRect(16, 2, 8, 24, 3);
+    pause.generateTexture('pauseIcon', 28, 28); pause.destroy();
+
+    // settings icon
+    const s = this.add.graphics();
+    s.lineStyle(3, 0xF5F7FF, 1);
+    s.strokeCircle(14, 14, 8);
+    s.beginPath(); s.moveTo(14, 0); s.lineTo(14, 5); s.moveTo(14, 23); s.lineTo(14, 28); s.moveTo(0, 14); s.lineTo(5, 14); s.moveTo(23, 14); s.lineTo(28, 14);
+    s.strokePath();
+    s.generateTexture('settingsIcon', 32, 32); s.destroy();
+
+    // hand cursor for tutorial
+    const hand = this.add.graphics();
+    hand.fillStyle(0xF5F7FF, 0.95);
+    hand.fillCircle(8, 8, 8); hand.fillRoundedRect(4, 12, 20, 24, 5); hand.fillRoundedRect(2, 22, 8, 18, 4);
+    hand.generateTexture('handIcon', 32, 48); hand.destroy();
+  }
   makeParticles() { /* spark made above */ }
+}
+
+/* =====================================================================
+   TITLE SCENE — premium entry point
+   ===================================================================== */
+class TitleScene extends Phaser.Scene {
+  constructor() { super('title'); }
+  create() {
+    Audio.init();
+    this.cameras.main.setBackgroundColor(C.bg);
+    this.drawAmbient();
+    const cx = GW / 2, cy = GH / 2;
+    // big neon title
+    const title = this.add.text(cx, cy - 220, 'NEON STRIKE', {
+      fontFamily: FONT.display, fontSize: '86px', color: '#F5F7FF',
+      stroke: '#00E5FF', strokeThickness: 8,
+      shadow: { offsetX: 0, offsetY: 0, blur: 24, color: '#00E5FF', fill: true, stroke: true },
+    }).setOrigin(0.5);
+    this.tweens.add({ targets: title, alpha: 0.85, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+    const tag = this.add.text(cx, cy - 130, 'ONE THUMB. ONE BREATH. ONE MORE TRY.', {
+      fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99', letterSpacing: 3,
+    }).setOrigin(0.5);
+
+    // skin selector preview
+    const state = Store.load();
+    this.skin = SKINS.find(s => s.id === state.skin) || SKINS[0];
+    const skinLabel = this.add.text(cx, cy + 20, this.skin.name.toUpperCase(), {
+      fontFamily: FONT.body, fontSize: '13px', color: '#FFB347',
+    }).setOrigin(0.5);
+    const ball = this.add.image(cx, cy - 30, 'ball_' + this.skin.id).setScale(2.2);
+    this.tweens.add({ targets: ball, angle: 360, duration: 12000, repeat: -1 });
+    const halo = this.add.image(cx, cy - 30, 'halo').setScale(2.2).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: halo, scale: 2.4, alpha: 0.4, duration: 1500, yoyo: true, repeat: -1 });
+
+    // tap to play button
+    const btnY = cy + 120;
+    const btnBg = this.add.image(cx, btnY, 'btnPrimary').setInteractive();
+    const btnTxt = this.add.text(cx, btnY + 1, 'TAP TO PLAY', { fontFamily: FONT.display, fontSize: '32px', color: '#0A0E1A' }).setOrigin(0.5);
+    this.tweens.add({ targets: btnBg, scaleX: 1.04, scaleY: 1.04, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    btnBg.on('pointerdown', () => { Audio.ui(); if (navigator.vibrate && state.haptic) navigator.vibrate(10); this.scene.start('game'); });
+
+    // secondary: daily challenge
+    const dailyY = cy + 210;
+    const dailyBg = this.add.image(cx, dailyY, 'btnSecondary').setInteractive();
+    const dailyTxt = this.add.text(cx, dailyY + 1, 'DAILY CHALLENGE', { fontFamily: FONT.display, fontSize: '26px', color: '#00E5FF' }).setOrigin(0.5);
+    dailyBg.on('pointerdown', () => { Audio.ui(); state.daily = true; Store.save(state); location.href = location.pathname + '?daily=1'; });
+
+    // settings icon
+    const settings = this.add.image(GW - 34, 44, 'settingsIcon').setInteractive().setAlpha(0.8);
+    settings.on('pointerdown', () => this.openSettings(state));
+
+    // best score chip
+    const bestChip = this.add.graphics();
+    bestChip.fillStyle(0x0A0E1A, 0.7); bestChip.fillRoundedRect(16, 32, 110, 40, 20);
+    bestChip.lineStyle(1, 0x39FF14, 0.5); bestChip.strokeRoundedRect(16, 32, 110, 40, 20);
+    const bestTxt = this.add.text(72, 52, 'BEST ' + (state.high || 0), { fontFamily: FONT.display, fontSize: '24px', color: '#39FF14' }).setOrigin(0.5);
+
+    if (!localStorage.getItem(HAS_TUTORIAL)) {
+      this.showHandHint(cx, cy + 300);
+    }
+  }
+  drawAmbient() {
+    const g = this.add.graphics();
+    for (let y = 0; y < GH; y += 4) {
+      const t = y / GH;
+      const col = Phaser.Display.Color.Interpolate.ColorWithColor(
+        Phaser.Display.Color.IntegerToColor(0x0C1120),
+        Phaser.Display.Color.IntegerToColor(0x080B16), 100, Math.floor(t * 100));
+      g.fillStyle(Phaser.Display.Color.GetColor(col.r, col.g, col.b), 1);
+      g.fillRect(0, y, GW, 4);
+    }
+    g.lineStyle(3, C.cyan, 0.25); g.strokeRect(16, 16, GW - 32, GH - 32);
+  }
+  showHandHint(x, y) {
+    const hand = this.add.image(x, y, 'handIcon').setAlpha(0.9).setScale(1.2);
+    this.tweens.add({ targets: hand, x: x - 50, y: y - 20, duration: 900, yoyo: true, repeat: 2, ease: 'Sine.inOut' });
+    const t = this.add.text(x + 40, y, 'Drag back, then release', { fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99' }).setOrigin(0, 0.5);
+    this.time.delayedCall(2800, () => { hand.destroy(); t.destroy(); });
+  }
+  openSettings(state) {
+    if (this.settingsOpen) return; this.settingsOpen = true;
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x05070E, 0.78); overlay.fillRect(0, 0, GW, GH); overlay.setDepth(90);
+    const panel = this.add.image(GW / 2, GH / 2, 'glassPanel').setDepth(91);
+    const title = this.add.text(GW / 2, 230, 'SETTINGS', { fontFamily: FONT.display, fontSize: '42px', color: '#00E5FF' }).setOrigin(0.5).setDepth(92);
+    const closeX = this.add.text(GW - 62, 205, '✕', { fontFamily: FONT.body, fontSize: '28px', color: '#FF4D6D' }).setOrigin(0.5).setDepth(92).setInteractive();
+    let y = 310;
+    const mkToggle = (label, key, color) => {
+      const on = !!state[key];
+      const rowBg = this.add.rectangle(GW / 2, y, 280, 56, 0x10172A).setDepth(91);
+      const lab = this.add.text(56, y, label, { fontFamily: FONT.body, fontSize: '18px', color: '#F5F7FF' }).setOrigin(0, 0.5).setDepth(92);
+      const knob = this.add.circle(on ? GW - 68 : GW - 112, y, 12, on ? Phaser.Display.Color.HexStringToColor(color).color : 0x6B7A99).setDepth(92);
+      const track = this.add.rectangle(GW - 90, y, 44, 22, 0x1E2A44).setDepth(91);
+      const hit = this.add.rectangle(GW / 2, y, 280, 56, 0x000000, 0).setInteractive().setDepth(93);
+      hit.on('pointerdown', () => {
+        Audio.ui(); state[key] = !state[key]; Store.save(state);
+        this.tweens.add({ targets: knob, x: state[key] ? GW - 68 : GW - 112, fillColor: state[key] ? Phaser.Display.Color.HexStringToColor(color).color : 0x6B7A99, duration: 160 });
+        if (key === 'sound') Audio.enabled = state[key];
+      });
+      y += 70;
+    };
+    mkToggle('Sound', 'sound', '#00E5FF');
+    mkToggle('Haptics', 'haptic', '#FF2D95');
+    const done = () => { overlay.destroy(); panel.destroy(); title.destroy(); closeX.destroy(); this.settingsOpen = false; };
+    closeX.on('pointerdown', done);
+  }
 }
 
 /* =====================================================================
@@ -197,6 +370,15 @@ class GameScene extends Phaser.Scene {
 
     // first-touch audio unlock + remove boot text
     this.input.once('pointerdown', () => { Audio.unlock(); const b = document.getElementById('bootMsg'); if (b) b.remove(); });
+
+    // onboarding tutorial overlay on first play
+    if (!localStorage.getItem(HAS_TUTORIAL)) {
+      this.time.delayedCall(600, () => this.showTutorial());
+    }
+
+    // pause/settings button
+    this.pauseBtn = this.add.image(GW - 36, 56, 'pauseIcon').setInteractive().setDepth(20);
+    this.pauseBtn.on('pointerdown', () => this.openPause());
   }
 
   fireAtGoal() {
@@ -315,56 +497,79 @@ class GameScene extends Phaser.Scene {
 
   /* ---------- HUD ---------- */
   buildHUD() {
-    const g = this.add.graphics();
-    g.fillStyle(0x05070E, 0.55); g.fillRect(0, 0, GW, 96);
-    g.lineStyle(2, C.cyan, 0.4); g.lineBetween(0, 96, GW, 96);
+    // glass header panel
+    this.hudPanel = this.add.graphics();
+    this.hudPanel.fillStyle(0x05070E, 0.78); this.hudPanel.fillRoundedRect(12, 10, GW - 24, 100, 18);
+    this.hudPanel.lineStyle(2, 0x00E5FF, 0.25); this.hudPanel.strokeRoundedRect(12, 10, GW - 24, 100, 18);
+    this.hudPanel.setDepth(19);
+
     // score
-    this.scoreTxt = this.add.text(GW / 2, 34, '0', { fontFamily: 'Arial Black, system-ui', fontSize: '40px', color: '#F5F7FF' }).setOrigin(0.5);
-    this.scoreLabel = this.add.text(GW / 2, 66, 'SCORE', { fontFamily: 'system-ui', fontSize: '12px', color: '#6B7A99' }).setOrigin(0.5);
+    this.scoreTxt = this.add.text(GW / 2, 34, '0', {
+      fontFamily: FONT.display, fontSize: '44px', color: '#F5F7FF',
+      shadow: { offsetX: 0, offsetY: 0, blur: 12, color: '#00E5FF', fill: true },
+    }).setOrigin(0.5).setDepth(20);
+    this.scoreLabel = this.add.text(GW / 2, 62, 'SCORE', { fontFamily: FONT.body, fontSize: '10px', color: '#6B7A99', letterSpacing: 2 }).setOrigin(0.5).setDepth(20);
+
     // streak (top-right)
-    this.streakTxt = this.add.text(GW - 36, 34, '×1', { fontFamily: 'Arial Black, system-ui', fontSize: '28px', color: '#FF2D95' }).setOrigin(1, 0.5);
-    this.streakLabel = this.add.text(GW - 36, 62, 'STREAK', { fontFamily: 'system-ui', fontSize: '10px', color: '#6B7A99' }).setOrigin(1, 0.5);
+    this.streakIcon = this.add.image(GW - 84, 36, 'lightning').setScale(0.55).setDepth(20);
+    this.streakTxt = this.add.text(GW - 44, 34, '×1', { fontFamily: FONT.display, fontSize: '28px', color: '#FF2D95' }).setOrigin(1, 0.5).setDepth(20);
+    this.streakLabel = this.add.text(GW - 44, 60, 'STREAK', { fontFamily: FONT.body, fontSize: '9px', color: '#6B7A99' }).setOrigin(1, 0.5).setDepth(20);
+
     // lives (top-left)
-    this.lifeDots = [];
+    this.lifeIcons = [];
     for (let i = 0; i < 3; i++) {
-      const d = this.add.circle(28 + i * 26, 34, 8, C.green);
-      d.setStrokeStyle(2, 0x05070E); this.lifeDots.push(d);
+      const h = this.add.image(38 + i * 26, 44, 'heart').setScale(0.55).setDepth(20);
+      this.lifeIcons.push(h);
     }
-    this.livesLabel = this.add.text(28, 58, 'LIVES', { fontFamily: 'system-ui', fontSize: '10px', color: '#6B7A99' });
+    this.livesLabel = this.add.text(38, 72, 'LIVES', { fontFamily: FONT.body, fontSize: '9px', color: '#6B7A99' }).setDepth(20);
+
     // level pill (top-center under score)
-    this.levelTxt = this.add.text(GW / 2, 86, 'LEVEL 1', { fontFamily: 'system-ui', fontSize: '11px', color: '#00E5FF' }).setOrigin(0.5);
+    this.levelBadge = this.add.graphics().setDepth(20);
+    this.levelTxt = this.add.text(GW / 2, 88, 'LEVEL 1', { fontFamily: FONT.body, fontSize: '11px', color: '#00E5FF' }).setOrigin(0.5).setDepth(21);
+
+    // combo bar neon tube
+    this.comboBar = this.add.graphics().setDepth(20);
     // distance meter (left edge vertical)
-    this.distTxt = this.add.text(16, 120, '20m', { fontFamily: 'system-ui', fontSize: '11px', color: '#6B7A99' });
+    this.distTxt = this.add.text(18, 124, '20m', { fontFamily: FONT.body, fontSize: '11px', color: '#6B7A99' }).setDepth(20);
     // wind indicator
-    this.windTxt = this.add.text(GW - 16, 120, '', { fontFamily: 'system-ui', fontSize: '11px', color: '#FFB347' }).setOrigin(1, 0);
+    this.windTxt = this.add.text(GW - 18, 124, '', { fontFamily: FONT.body, fontSize: '11px', color: '#FFB347' }).setOrigin(1, 0).setDepth(20);
     // timer
-    this.timerTxt = this.add.text(GW / 2, 110, '', { fontFamily: 'Arial Black, system-ui', fontSize: '20px', color: '#FF4D6D' }).setOrigin(0.5);
+    this.timerTxt = this.add.text(GW / 2, 124, '', { fontFamily: FONT.display, fontSize: '22px', color: '#FF4D6D' }).setOrigin(0.5).setDepth(20);
     this.timerTxt.setVisible(false);
-    // combo bar
-    this.comboBar = this.add.graphics();
+
     // hint
-    this.hintTxt = this.add.text(GW / 2, GH - 60, 'DRAG BACK FROM BALL · SWIPE SIDEWAYS TO CURVE', { fontFamily: 'system-ui', fontSize: '13px', color: '#6B7A99' }).setOrigin(0.5);
+    this.hintTxt = this.add.text(GW / 2, GH - 56, 'DRAG BACK FROM THE BALL · SWIPE SIDEWAYS TO CURVE', {
+      fontFamily: FONT.body, fontSize: '12px', color: '#6B7A99',
+    }).setOrigin(0.5).setDepth(20);
+
     // best
-    this.bestTxt = this.add.text(GW / 2, GH - 36, 'BEST: ' + (this.state.high || 0), { fontFamily: 'system-ui', fontSize: '12px', color: '#39FF14' }).setOrigin(0.5);
+    this.bestTxt = this.add.text(GW / 2, GH - 34, 'BEST: ' + (this.state.high || 0), { fontFamily: FONT.body, fontSize: '11px', color: '#39FF14' }).setOrigin(0.5).setDepth(20);
   }
   updateHUD() {
     this.scoreTxt.setText(String(this.score));
     this.streakTxt.setText('×' + (1 + Math.min(this.streak, 4)));
+    this.streakIcon.setTint(this.streak >= 4 ? C.green : 0xFF2D95);
+    this.streakIcon.setScale(this.streak >= 4 ? 0.62 : 0.55);
     this.levelTxt.setText('LEVEL ' + this.level);
-    this.lifeDots.forEach((d, i) => d.setFillStyle(i < this.lives ? C.green : 0x2A2F3D));
+    this.levelBadge.clear();
+    this.levelBadge.fillStyle(0x10172A, 1); this.levelBadge.fillRoundedRect(GW / 2 - 34, 80, 68, 18, 9);
+    this.levelBadge.lineStyle(1, 0x00E5FF, 0.5); this.levelBadge.strokeRoundedRect(GW / 2 - 34, 80, 68, 18, 9);
+    this.lifeIcons.forEach((h, i) => h.setTint(i < this.lives ? C.green : 0x2A2F3D).setAlpha(i < this.lives ? 1 : 0.4));
     this.bestTxt.setText('BEST: ' + Math.max(this.state.high, this.score));
-    // combo bar fill = streak progress
+    // combo bar fill
     const pct = Math.min(this.streak / 5, 1);
     this.comboBar.clear();
-    this.comboBar.fillStyle(0x1E2A44, 1); this.comboBar.fillRoundedRect(GW / 2 - 70, 92, 140, 4, 2);
-    this.comboBar.fillStyle(pct >= 1 ? 0x39FF14 : 0xFF2D95, 1); this.comboBar.fillRoundedRect(GW / 2 - 70, 92, 140 * pct, 4, 2);
+    this.comboBar.fillStyle(0x1E2A44, 1); this.comboBar.fillRoundedRect(GW / 2 - 74, 108, 148, 6, 3);
+    this.comboBar.fillStyle(pct >= 1 ? C.green : C.magenta, 1);
+    this.comboBar.fillRoundedRect(GW / 2 - 74, 108, 148 * pct, 6, 3);
   }
 
   /* ---------- input ---------- */
   bindInput() {
     this.input.on('pointerdown', (p) => {
-      if (this.busy || this.gameOverShown) return;
-      if (!this.ballData.flying && Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y) < 120) {
+      if (this.busy || this.gameOverShown || this.paused) return;
+      // large 140px touch zone around ball for accessibility
+      if (!this.ballData.flying && Phaser.Math.Distance.Between(p.x, p.y, this.ball.x, this.ball.y) < 140) {
         this.aiming = true; this.aimStart = { x: p.x, y: p.y };
         Audio.ui();
       }
@@ -399,11 +604,14 @@ class GameScene extends Phaser.Scene {
     this.ballData.flying = true; this.ballData.scored = false; this.ballData.hitPost = false;
     this.ballData.trail = [];
     Audio.kick();
-    this.cameras.main.shake(60, 0.004);
+    this.cameras.main.shake(70, 0.005);
+    this.cameras.main.zoomTo(1.05, 90, 'Sine.out', false, (c) => c.zoomTo(1, 280));
     this.ball.setScale(1.18, 0.82);    // squash
     this.tweens.add({ targets: this.ball, scaleX: 1, scaleY: 1, duration: 140, ease: 'Back.out' });
-    if (navigator.vibrate && this.state.haptic) navigator.vibrate(12);
+    if (navigator.vibrate && this.state.haptic) navigator.vibrate(14);
     this.hintTxt.setAlpha(0);
+    localStorage.setItem(HAS_TUTORIAL, '1');
+    if (this.tutorialGroup) { this.tutorialGroup.destroy(true); this.tutorialGroup = null; }
   }
 
   /* ---------- level management ---------- */
@@ -745,13 +953,14 @@ class GameScene extends Phaser.Scene {
   toastAchievement(ach) {
     if (!ach) return;
     Audio.perfect();
+    const y = 180;
     const bg = this.add.graphics();
-    bg.fillStyle(0x0A0E1A, 0.9); bg.fillRoundedRect(40, 180, GW - 80, 60, 12);
-    bg.lineStyle(2, 0x39FF14, 0.8); bg.strokeRoundedRect(40, 180, GW - 80, 60, 12);
+    bg.fillStyle(0x0A0E1A, 0.94); bg.fillRoundedRect(34, y - 18, GW - 68, 72, 18);
+    bg.lineStyle(2, C.green, 0.8); bg.strokeRoundedRect(34, y - 18, GW - 68, 72, 18);
     bg.setDepth(40);
-    const t1 = this.add.text(GW / 2, 205, '🏆 ' + ach.name, { fontFamily: 'Arial Black, system-ui', fontSize: '20px', color: '#39FF14' }).setOrigin(0.5).setDepth(41);
-    const t2 = this.add.text(GW / 2, 230, ach.desc, { fontFamily: 'system-ui', fontSize: '12px', color: '#F5F7FF' }).setOrigin(0.5).setDepth(41);
-    this.tweens.add({ targets: [bg, t1, t2], alpha: 0, duration: 300, delay: 1800, onComplete: () => { bg.destroy(); t1.destroy(); t2.destroy(); } });
+    const t1 = this.add.text(GW / 2, y + 5, '🏆 ' + ach.name, { fontFamily: FONT.display, fontSize: '22px', color: '#39FF14' }).setOrigin(0.5).setDepth(41);
+    const t2 = this.add.text(GW / 2, y + 30, ach.desc, { fontFamily: FONT.body, fontSize: '12px', color: '#F5F7FF' }).setOrigin(0.5).setDepth(41);
+    this.tweens.add({ targets: [bg, t1, t2], alpha: 0, duration: 300, delay: 2200, onComplete: () => { bg.destroy(); t1.destroy(); t2.destroy(); } });
   }
 
   /* ---------- game over ---------- */
@@ -773,51 +982,44 @@ class GameScene extends Phaser.Scene {
     overlay.fillStyle(0x05070E, 0.82); overlay.fillRect(0, 0, GW, GH);
     overlay.setDepth(50);
     const y0 = GH / 2 - 220;
-    this.add.text(GW / 2, y0, 'GAME OVER', { fontFamily: 'Arial Black, system-ui', fontSize: '56px', color: '#FF4D6D', stroke: '#0A0E1A', strokeThickness: 6 }).setOrigin(0.5).setDepth(51);
-    this.add.text(GW / 2, y0 + 80, 'SCORE', { fontFamily: 'system-ui', fontSize: '16px', color: '#6B7A99' }).setOrigin(0.5).setDepth(51);
-    this.add.text(GW / 2, y0 + 130, String(this.score), { fontFamily: 'Arial Black, system-ui', fontSize: '64px', color: '#F5F7FF' }).setOrigin(0.5).setDepth(51);
-    const bestLabel = this.add.text(GW / 2, y0 + 205, 'BEST: ' + this.state.high + '   LVL ' + this.level, { fontFamily: 'system-ui', fontSize: '18px', color: '#39FF14' }).setOrigin(0.5).setDepth(51);
+    // glass card
+    const panel = this.add.image(GW / 2, GH / 2, 'glassPanel').setDepth(51);
+    this.add.text(GW / 2, y0 + 10, 'GAME OVER', { fontFamily: FONT.display, fontSize: '54px', color: '#FF4D6D' }).setOrigin(0.5).setDepth(52);
+    this.add.text(GW / 2, y0 + 90, 'SCORE', { fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99', letterSpacing: 3 }).setOrigin(0.5).setDepth(52);
+    this.add.text(GW / 2, y0 + 150, String(this.score), { fontFamily: FONT.display, fontSize: '70px', color: '#F5F7FF' }).setOrigin(0.5).setDepth(52);
+    const bestLabel = this.add.text(GW / 2, y0 + 230, 'BEST: ' + this.state.high + '   LVL ' + this.level, { fontFamily: FONT.body, fontSize: '16px', color: '#39FF14' }).setOrigin(0.5).setDepth(52);
     // unlocks row
     let unlockedMsg = '';
     SKINS.forEach(s => { if (this.score >= s.unlock) unlockedMsg += (this.state.unlocked.includes(s.id) ? '●' : '○') + s.name + (s.rare ? '★ ' : '  '); });
-    this.add.text(GW / 2, y0 + 250, 'SKINS: ' + unlockedMsg.trim(), { fontFamily: 'system-ui', fontSize: '13px', color: '#FFB347', align: 'center' }).setOrigin(0.5).setDepth(51);
+    const skinTxt = this.add.text(GW / 2, y0 + 270, 'SKINS: ' + unlockedMsg.trim(), { fontFamily: FONT.body, fontSize: '12px', color: '#FFB347', align: 'center' }).setOrigin(0.5).setDepth(52);
+    if (!unlockedMsg.trim()) skinTxt.setVisible(false);
 
-    // action buttons
+    // action buttons — use new design buttons
+    let by = y0 + 320;
     const canRevive = this.lives <= 0 && typeof NeonAds !== 'undefined' && NeonAds.isReady();
-    const btnH = 50;
-    const makeBtn = (label, y, color, onClick) => {
-      const bg = this.add.rectangle(GW / 2, y, 260, btnH, 0x1E2A44).setInteractive().setDepth(51);
-      const txt = this.add.text(GW / 2, y, label, { fontFamily: 'Arial Black, system-ui', fontSize: '18px', color: color }).setOrigin(0.5).setDepth(52);
-      bg.on('pointerdown', () => { Audio.ui(); onClick(); });
-      bg.on('pointerover', () => { bg.setFillStyle(0x2A3A5E); document.body.style.cursor = 'pointer'; });
-      bg.on('pointerout', () => { bg.setFillStyle(0x1E2A44); document.body.style.cursor = 'default'; });
-      return { bg, txt };
+    const makeGameOverBtn = (label, y, color, onClick) => {
+      return this.addImageButton(GW / 2, y, label, color, () => { Audio.ui(); onClick(); });
     };
 
-    let by = y0 + 320;
     if (canRevive) {
-      makeBtn('▶ REVIVE (AD)', by, '#39FF14', () => {
+      makeGameOverBtn('REVIVE (AD)', by, '#39FF14', () => {
         NeonAds.showRewarded((granted) => {
           if (granted) { this.gameOverShown = false; this.lives = 1; this.busy = false; overlay.destroy(); this.children.list.filter(c => c.depth >= 51).forEach(c => c.destroy()); this.resetBall(); }
         });
       });
       by += 66;
     }
-    makeBtn((this.rewardsDoubled ? '✓ REWARD DOUBLED' : '×2 REWARDS (AD)'), by, this.rewardsDoubled ? '#6B7A99' : '#FFB347', () => {
+    makeGameOverBtn((this.rewardsDoubled ? 'REWARD DOUBLED' : '×2 REWARDS (AD)'), by, this.rewardsDoubled ? '#6B7A99' : '#FFB347', () => {
       if (this.rewardsDoubled) return;
       NeonAds.showRewarded((granted) => {
         if (granted) { this.rewardsDoubled = true; this.score *= 2; this.state.stars += Math.floor(this.score / 500); Store.save(this.state); bestLabel.setText('BEST: ' + this.state.high + '   LVL ' + this.level + '   ⭐' + this.state.stars); }
       });
     });
     by += 66;
-    makeBtn('🛒 SHOP', by, '#00E5FF', () => this.openShop(overlay));
+    makeGameOverBtn('SHOP', by, '#00E5FF', () => this.openShop(overlay));
     by += 66;
-    makeBtn('↻ RETRY', by, '#F5F7FF', () => this.scene.restart());
+    makeGameOverBtn('RETRY', by, '#F5F7FF', () => this.scene.restart());
 
-    // tap anywhere to retry if no ad available
-    if (!canRevive) {
-      this.input.once('pointerdown', (p) => { if (p.y > y0 + 300) this.scene.restart(); });
-    }
     Audio.miss();
   }
 
