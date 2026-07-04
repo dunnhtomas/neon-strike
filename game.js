@@ -179,18 +179,20 @@ class BootScene extends Phaser.Scene {
     // heart icon for lives
     const h = this.add.graphics();
     h.fillStyle(0x39FF14, 1);
-    h.beginPath();
-    h.moveTo(12, 22); h.bezierCurveTo(12, 18, 8, 12, 0, 12); h.bezierCurveTo(-12, 12, -16, 22, -12, 28);
-    h.lineTo(0, 42); h.lineTo(12, 28);
-    h.closePath(); h.fillPath();
+    const heartPath = new Phaser.Curves.Path(12, 22);
+    heartPath.cubicBezierTo(12, 18, 8, 12, 0, 12);
+    heartPath.cubicBezierTo(-12, 12, -16, 22, -12, 28);
+    heartPath.lineTo(0, 42); heartPath.lineTo(12, 28); heartPath.lineTo(12, 22);
+    heartPath.draw(h);
+    h.fillPath();
     h.generateTexture('heart', 28, 48); h.destroy();
 
     // lightning icon
     const l = this.add.graphics();
     l.fillStyle(0xFF2D95, 1);
-    l.beginPath();
-    l.moveTo(6, 0); l.lineTo(20, 0); l.lineTo(10, 18); l.lineTo(22, 18); l.lineTo(0, 44); l.lineTo(8, 22); l.lineTo(-4, 22);
-    l.closePath(); l.fillPath();
+    l.fillTriangle(6, 0, 20, 0, 10, 18);
+    l.fillTriangle(0, 44, 8, 22, -4, 22);
+    l.fillTriangle(22, 18, 8, 22, 10, 18);
     l.generateTexture('lightning', 28, 48); l.destroy();
 
     // pause icon
@@ -1092,7 +1094,7 @@ window.addEventListener('load', () => {
       width: GW, height: GH,
     },
     physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
-    scene: [BootScene, GameScene],
+    scene: [BootScene, TitleScene, GameScene],
     fps: { target: 60, forceSetTimeOut: false },
     render: { antialias: true, powerPreference: 'high-performance' },
   };

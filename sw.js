@@ -1,5 +1,5 @@
 /* Neon Strike — minimal offline service worker */
-const CACHE = 'neon-strike-v2';
+const CACHE = 'neon-strike-v3';
 const ASSETS = [
   './',
   './index.html',
