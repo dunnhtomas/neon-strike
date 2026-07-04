@@ -929,6 +929,66 @@ class GameScene extends Phaser.Scene {
     this.aimG.lineStyle(4, col, 0.8); this.aimG.strokeCircle(this.ball.x, this.ball.y, 26 + power * 14);
   }
 
+  showTutorial() {
+    if (this.tutorialGroup) return;
+    const g = this.tutorialGroup = this.add.container(0, 0).setDepth(30);
+    const dim = this.add.graphics(); dim.fillStyle(0x05070E, 0.55); dim.fillRect(0, 0, GW, GH); g.add(dim);
+    const hand = this.add.image(GW / 2 + 40, GH - 170, 'handIcon').setScale(1.4).setAlpha(0.95); g.add(hand);
+    const t1 = this.add.text(GW / 2, GH - 110, 'DRAG BACK FROM THE BALL', { fontFamily: FONT.display, fontSize: '28px', color: '#F5F7FF' }).setOrigin(0.5); g.add(t1);
+    const t2 = this.add.text(GW / 2, GH - 78, 'Then swipe sideways on release to curve it', { fontFamily: FONT.body, fontSize: '14px', color: '#6B7A99' }).setOrigin(0.5); g.add(t2);
+    this.tweens.add({ targets: hand, x: GW / 2 - 40, y: GH - 200, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: [t1, t2], alpha: 0.7, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  }
+
+  openPause() {
+    if (this.paused) return; this.paused = true; this.physics?.world?.pause(); this.scene.pause();
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x05070E, 0.85); overlay.fillRect(0, 0, GW, GH); overlay.setDepth(80);
+    const panel = this.add.image(GW / 2, GH / 2, 'glassPanel').setDepth(81);
+    const title = this.add.text(GW / 2, 240, 'PAUSED', { fontFamily: FONT.display, fontSize: '50px', color: '#00E5FF' }).setOrigin(0.5).setDepth(82);
+    const resume = this.addImageButton(GW / 2, 360, 'RESUME', '#00E5FF', () => { overlay.destroy(); panel.destroy(); title.destroy(); resume.destroy(); this.paused = false; this.scene.resume(); this.physics?.world?.resume(); });
+    const settings = this.addImageButton(GW / 2, 440, 'SETTINGS', '#F5F7FF', () => this.openSettingsInline(overlay, panel, title, resume, settings));
+  }
+
+  addImageButton(cx, cy, label, color, onClick) {
+    const bg = this.add.image(cx, cy, 'btnSecondary').setInteractive();
+    const txt = this.add.text(cx, cy + 1, label, { fontFamily: FONT.display, fontSize: '26px', color }).setOrigin(0.5);
+    bg.on('pointerdown', () => { Audio.ui(); if (navigator.vibrate && this.state.haptic) navigator.vibrate(10); onClick(); });
+    bg.on('pointerover', () => bg.setTint(0xDDDDFF));
+    bg.on('pointerout', () => bg.clearTint());
+    return { destroy: () => { bg.destroy(); txt.destroy(); }, setVisible(v) { bg.setVisible(v); txt.setVisible(v); } };
+  }
+
+  openSettingsInline(...toHide) {
+    toHide.forEach(o => o.setVisible(false));
+    const p2 = this.add.image(GW / 2, GH / 2, 'glassPanel').setDepth(83);
+    const t2 = this.add.text(GW / 2, 240, 'SETTINGS', { fontFamily: FONT.display, fontSize: '46px', color: '#00E5FF' }).setOrigin(0.5).setDepth(84);
+    let y = 320;
+    const toggles = [p2, t2];
+    const mkToggle = (label, key, color) => {
+      const on = !!this.state[key];
+      const row = this.add.rectangle(GW / 2, y, 280, 56, 0x10172A).setDepth(83);
+      const lab = this.add.text(56, y, label, { fontFamily: FONT.body, fontSize: '18px', color: '#F5F7FF' }).setOrigin(0, 0.5).setDepth(84);
+      const knob = this.add.circle(on ? GW - 68 : GW - 112, y, 12, on ? Phaser.Display.Color.HexStringToColor(color).color : 0x6B7A99).setDepth(84);
+      const hit = this.add.rectangle(GW / 2, y, 280, 56, 0x000000, 0).setInteractive().setDepth(85);
+      const toggle = () => {
+        Audio.ui(); this.state[key] = !this.state[key]; Store.save(this.state);
+        this.tweens.add({ targets: knob, x: this.state[key] ? GW - 68 : GW - 112, duration: 160 });
+        knob.setFillStyle(this.state[key] ? Phaser.Display.Color.HexStringToColor(color).color : 0x6B7A99);
+        if (key === 'sound') Audio.enabled = this.state[key];
+      };
+      hit.on('pointerdown', toggle);
+      toggles.push(row, lab, knob, hit);
+      y += 70;
+    };
+    mkToggle('Sound', 'sound', '#00E5FF');
+    mkToggle('Haptics', 'haptic', '#FF2D95');
+    const back = this.addImageButton(GW / 2, y + 20, 'BACK', '#F5F7FF', () => {
+      toggles.forEach(o => o.destroy()); back.destroy();
+      toHide.forEach(o => o.setVisible(true));
+    });
+  }
+
   /* ---------- particles ---------- */
   spawnSparks(x, y, color, n) {
     const p = this.add.particles(x, y, 'spark', {
